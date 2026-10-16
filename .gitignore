@@ -1,2 +1,16 @@
 # Documento interno de estruturação (não versionar)
 Wolf_Quant_Fund_Documento_de_Estruturacao.docx
+
+# Ambiente local e dados (ver .env.example)
+.env
+data/
+
+# Python e ferramentas (ambientes, caches e builds locais)
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/

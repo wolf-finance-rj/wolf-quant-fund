@@ -1,0 +1,24 @@
+# Controle de versão e CI (não vão para a imagem via COPY . .)
+.git
+.github
+
+# Ambiente virtual e caches locais (recriados dentro da imagem)
+.venv
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Segredos e dados locais (ver .env.example)
+.env
+data/
+
+# Notebooks e documentos internos
+**/.ipynb_checkpoints/
+*.docx
+
+# Arquivos do Docker
+Dockerfile
+.dockerignore
+compose.yaml

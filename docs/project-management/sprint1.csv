@@ -1,0 +1,8 @@
+ID,Title,Owner role,Reviewer role,Area,Priority,Milestone,Iteration,Status
+INFRA-001,Estruturar monorepo Python e configurar CI,Liderança técnica,Portfólio e Risco,Infrastructure,P1,M1 — Foundation & Contracts,Sprint 1,Backlog
+DATA-001,Definir MarketData e criar provider CSV experimental,Engenharia de Dados,Analytics,Data Engineering,P1,M1 — Foundation & Contracts,Sprint 1,Backlog
+MOM-001,Documentar hipótese e pseudocódigo de Momentum,Quant Research Momentum,Quant Research Pairs,Momentum,P2,M1 — Foundation & Contracts,Sprint 1,Backlog
+PAIR-001,Pesquisar metodologia de Pairs Trading,Quant Research Pairs,Quant Research Momentum,Pairs Trading,P2,M1 — Foundation & Contracts,Sprint 1,Backlog
+BT-001,Especificar motor de backtesting e ledger,Portfólio e Risco,Liderança técnica,Backtesting,P1,M1 — Foundation & Contracts,Sprint 1,Backlog
+AN-001,Definir métricas e estrutura da carta experimental,Analytics e Reporting,Engenharia de Dados,Reporting,P2,M1 — Foundation & Contracts,Sprint 1,Backlog
+ARCH-001,Aprovar contratos e validar execução local da equipe,Liderança + todos,Revisão cruzada,Infrastructure,P1,M1 — Foundation & Contracts,Sprint 1,Backlog

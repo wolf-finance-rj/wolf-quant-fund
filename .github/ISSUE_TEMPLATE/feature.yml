@@ -1,0 +1,29 @@
+name: Nova funcionalidade
+description: Propor implementação ou aprimoramento
+labels: ["feature"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objetivo
+      description: Problema que a entrega resolve
+    validations:
+      required: true
+  - type: textarea
+    id: interfaces
+    attributes:
+      label: Entradas, saídas e dependências
+      description: Contratos e Issues relacionadas
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Critérios de aceite
+      placeholder: "- [ ] Implementação testada\n- [ ] Documentação atualizada"
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Riscos, validação e impactos financeiros

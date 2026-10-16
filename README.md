@@ -2,7 +2,7 @@
 
 Fundo quantitativo **simulado** da **Wolf Finance**, com capital fictício aplicado ao mercado de ações brasileiro por meio de estratégias sistemáticas. Opera em paralelo ao fundo multimercado da liga e serve como base de comparação entre gestão discricionária e gestão quantitativa.
 
-> **Documento de referência:** [`Wolf_Quant_Fund_Documento_de_Estruturacao.docx`](Wolf_Quant_Fund_Documento_de_Estruturacao.docx)
+> **Documento de referência:** `Wolf_Quant_Fund_Documento_de_Estruturacao.docx` (interno, não versionado)
 > Manual do fundo — estrutura, processos e governança | Versão 1.0 (Out/2026) | Uso interno.
 
 ---
@@ -134,22 +134,92 @@ Mudanças de fonte exigem verificação de consistência com a série histórica
 - Todo código gerado ou alterado com IA passa por revisão de outro membro.
 - Resultados muito bons ou muito ruins são verificados manualmente antes do fechamento.
 
-### Estrutura do repositório (prevista)
+---
+
+## Começando a desenvolver
+
+Guia para quem vai mexer no código. Processo de colaboração em [`CONTRIBUTING.md`](CONTRIBUTING.md); rumo técnico em [`docs/architecture/overview.md`](docs/architecture/overview.md) e contratos em [`docs/architecture/contracts.md`](docs/architecture/contracts.md).
+
+### Pré-requisitos
+
+- **uv** — instala e gerencia o Python 3.12 (fixado em `.python-version`) e as dependências do `uv.lock`; não é preciso instalar Python separadamente. Instalação: <https://docs.astral.sh/uv/getting-started/installation/>.
+- **Docker + Compose v2** (opcional) — alternativa para rodar tudo em container, sem instalar o ambiente Python na máquina.
+
+### Configuração inicial
+
+```bash
+git clone https://github.com/wolf-finance-rj/wolf-quant-fund.git
+cd wolf-quant-fund
+uv sync --group dev     # cria o .venv com as dependências do uv.lock
+uv run pytest -q        # verificação inicial: deve passar
+cp .env.example .env    # opcional; o .env nunca é versionado
+```
+
+### Comandos do dia a dia
+
+| Objetivo | Local (uv) | Docker Compose |
+|---|---|---|
+| Rodar os testes | `uv run pytest -q` | `docker compose run --rm test` |
+| Rodar um diretório de testes | `uv run pytest tests/unit -q` | `docker compose run --rm app uv run pytest tests/unit -q` |
+| Checar lint | `uv run ruff check .` | `docker compose run --rm lint` |
+| Formatar | `uv run ruff format .` | `docker compose run --rm app uv run ruff format .` |
+
+Antes de abrir a PR, os três checks do CI precisam passar: `uv run ruff check .`, `uv run ruff format --check .` e `uv run pytest`.
+
+### Alternativa: Docker Compose
+
+Imagem com Python 3.12 e uv, dependências fixadas pelo `uv.lock` e o repositório montado em `/app`.
+
+| Comando | O que faz |
+|---|---|
+| `docker compose build` | Constrói a imagem de desenvolvimento. |
+| `docker compose up -d app` | Sobe o sandbox de desenvolvimento em segundo plano. |
+| `docker compose exec app bash` | Abre um terminal dentro do container. |
+| `docker compose run --rm test` | Roda `uv run pytest -q`. |
+| `docker compose run --rm lint` | Roda `uv run ruff check .` e `uv run ruff format --check .`. |
+| `docker compose run --rm app <comando>` | Executa um comando avulso (ex.: `uv run ruff format .`). |
+
+- Edições locais refletem no container imediatamente (bind mount); a imagem só precisa ser reconstruída quando `pyproject.toml` ou `uv.lock` mudarem.
+- Variáveis de `.env` (veja `.env.example`) são lidas pelo Compose; `WQF_DATA_DIR` aponta o diretório de dados (padrão: `./data` do repositório).
+- Notebooks (opcional): `docker compose run --rm --service-ports app uv run --with jupyterlab jupyter lab --ip=0.0.0.0 --no-browser --ServerApp.token=wqf` → <http://localhost:8888>.
+
+### Estrutura do repositório
 
 ```
 .
-├── config/                # parâmetros vigentes (datas, exposições, pesos, limites, custos)
-├── 1-limpeza/             # etapa 1: dados brutos → base limpa
-├── 2-estrategias/         # etapa 2: base limpa → retornos por estratégia
-├── 3-consolidacao/        # etapa 3: retornos → portfólio do fundo
-├── 4-metricas/            # etapa 4: portfólio → indicadores, gráficos e carta
-├── fichas/                # ficha por estratégia (modelo: Anexo 15.1)
-├── atas/                  # atas de decisões (modelo: Anexo 15.2)
-├── cartas/                # cartas mensais publicadas
-└── Wolf_Quant_Fund_Documento_de_Estruturacao.docx   # manual do fundo
+├── src/wqf/             # pacote do fundo: cada etapa do pipeline vira um módulo aqui
+├── tests/               # unit/ · integration/ · contracts/ · financial/ · fixtures/
+├── config/              # parametros.toml
+├── docs/                # architecture/ · decisions/ · letters/ · meetings/ · project-management/ · strategies/
+├── experiments/         # experimentos pontuais de pesquisa
+├── notebooks/           # exploração
+├── compose.yaml         # ambiente via Docker Compose (alternativa ao uv local)
+├── Dockerfile
+└── pyproject.toml       # dependências, Ruff e Pytest (versões fixadas no uv.lock)
 ```
 
-> Estrutura de referência definida na Seção 7.3 do manual: uma pasta por etapa do pipeline. As instruções de instalação e execução do zero serão incorporadas a este README conforme os módulos forem implementados.
+> O fluxo técnico está em [`docs/architecture/overview.md`](docs/architecture/overview.md); o código das etapas vive em `src/wqf/` e os parâmetros em `config/parametros.toml`, nunca fixos no código.
+
+### Onde escrever os testes
+
+| Pasta | Uso |
+|---|---|
+| `tests/unit/` | Unidades isoladas de código. |
+| `tests/integration/` | Integração entre módulos do fluxo. |
+| `tests/contracts/` | Contratos compartilhados de [`docs/architecture/contracts.md`](docs/architecture/contracts.md), com casos sintéticos. |
+| `tests/financial/` | Propriedades financeiras do motor: custos, caixa, proventos e temporalidade dos dados. |
+| `tests/fixtures/` | Dados e utilitários compartilhados entre testes. |
+
+### Convenções
+
+- Parâmetros (datas, custos, limites, pesos) sempre em `config/parametros.toml` — nunca no código.
+- Sem dados, segredos ou outputs pesados no Git: `data/`, `.env` e artefatos de execução ficam fora (ver "Segurança e dados" no [`CONTRIBUTING.md`](CONTRIBUTING.md)).
+- Python 3.12, linhas de até 100 caracteres, formatação e lint pelo Ruff (configurados no `pyproject.toml`).
+- Todo módulo novo chega com testes na categoria correspondente e vinculado a uma Issue.
+
+### Fluxo de trabalho
+
+Issue refinada no GitHub Project → branch curta a partir da `main` (`feat/12-csv-provider`, `fix/31-temporal-leakage`) → código com testes e checks verdes → PR com `Closes #NUMERO` e revisão de outra pessoa. Detalhes em [Contribuindo](#contribuindo), [`CONTRIBUTING.md`](CONTRIBUTING.md) e [`docs/project-management/README.md`](docs/project-management/README.md).
 
 ---
 
@@ -256,7 +326,7 @@ Todo papel crítico tem um **substituto designado**, e a equipe tem entre 5 e 7 
 
 ## Referências
 
-- **Manual do fundo:** [`Wolf_Quant_Fund_Documento_de_Estruturacao.docx`](Wolf_Quant_Fund_Documento_de_Estruturacao.docx) — versão 1.0, Out/2026.
+- **Manual do fundo:** `Wolf_Quant_Fund_Documento_de_Estruturacao.docx` (documento interno, fora do repositório) — versão 1.0, Out/2026.
   - Anexo 15.1 — Modelo de ficha de estratégia
   - Anexo 15.2 — Modelo de ata de decisão
   - Anexo 15.3 — Checklist de fechamento mensal
