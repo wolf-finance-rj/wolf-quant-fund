@@ -1,0 +1,8 @@
+# Parâmetros de REFERÊNCIA do manual; validar em comitê antes de execução operacional.
+[fund]
+starting_capital_brl = 100_000_000
+simulation_only = true
+
+[review]
+requires_governance_approval = true
+minimum_incubation_months = 3

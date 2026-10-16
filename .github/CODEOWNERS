@@ -1,0 +1,3 @@
+# Preencher com GitHub usernames reais ou equipes antes de exigir code-owner review.
+# Ex.: /src/wqf/data/ @wolf-finance-rj/quant-developers
+# ATENÇÃO: citar uma equipe inteira não garante revisão independente.
