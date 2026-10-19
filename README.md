@@ -166,15 +166,26 @@ Cada etapa do pipeline vira um **módulo dentro de `src/wqf/`**. O fluxo técnic
 ## Como contribuir
 
 > [!IMPORTANT]
-> A `main` é protegida: **nunca envie código direto para ela**. Toda mudança passa por uma branch e uma Pull Request revisada por outra pessoa.
+> A `main` é protegida: **ninguém envia código direto para ela**. Toda mudança entra por branch + Pull Request com CI verde e revisão independente. A diferença entre dev e admin é **quem aprova e faz o merge** — e quem administra as regras do repositório.
 
-O fluxo é: **Issue → branch → código + testes → checks → PR → revisão → merge**.
+O fluxo é: **Issue → branch → código + testes → checks → PR → revisão → merge pelo admin**.
 
-### Passo 1: escolha uma tarefa
+### Quem faz o quê
+
+| Papel | Responsabilidades | O que não faz |
+|---|---|---|
+| **Desenvolvedor(a)** | cria a branch, escreve código e testes, roda os checks, abre a PR e responde à revisão | fazer merge na `main` (nem da própria PR) |
+| **Admin / mantenedor(a)** | revisa, aprova, faz o merge (Squash and merge), exclui a branch e mantém proteções/CODEOWNERS | commitar direto na `main` no dia a dia; aprovar a própria PR sozinho |
+
+> Se você é dev, seu trabalho termina com a PR **verde e aprovada**, aguardando o merge de um admin. Se você é admin, além de desenvolver, você revisa e integra as PRs do time.
+
+### Fluxo do desenvolvedor
+
+#### Passo 1: escolha uma tarefa
 
 As tarefas ficam nas [Issues do repositório](https://github.com/wolf-finance-rj/wolf-quant-fund/issues) e no GitHub Project da organização (peça o link no grupo se não encontrar). Leia a Issue inteira, incluindo os critérios de aceite. Em dúvida, pergunte antes de começar.
 
-### Passo 2: crie uma branch
+#### Passo 2: crie uma branch
 
 ```bash
 git switch main        # vai para a branch principal
@@ -192,13 +203,13 @@ O número (`12`) é o número da Issue. Use um prefixo conforme o tipo de trabal
 | `test/` | testes |
 | `chore/` | manutenção (dependências, configuração) |
 
-### Passo 3: escreva o código
+#### Passo 3: escreva o código
 
 - Coloque o código de produção em `src/wqf/` e os testes na pasta correspondente.
 - Trabalhe em passos pequenos: é melhor uma PR pequena e fácil de revisar do que uma gigante.
-- Se precisar de uma biblioteca nova, instale com `uv add nome-da-biblioteca` e versione `pyproject.toml` e `uv.lock`.
+- Se precisar de uma biblioteca nova, instale com `docker compose run --rm app uv add nome-da-biblioteca` (ou `uv add` sem Docker), versione `pyproject.toml` e `uv.lock` e rode `docker compose build`.
 
-### Passo 4: rode os checks
+#### Passo 4: rode os checks
 
 ```bash
 docker compose run --rm checks
@@ -206,7 +217,7 @@ docker compose run --rm checks
 
 Sem Docker, o equivalente é `uv run ruff check . && uv run ruff format --check . && uv run pytest`. Corrija o que falhar antes de seguir. Para formatação automática: `docker compose run --rm app uv run ruff format .`.
 
-### Passo 5: salve e envie
+#### Passo 5: salve e envie
 
 ```bash
 git status                    # confira o que mudou
@@ -217,18 +228,18 @@ git push -u origin feat/12-descricao-curta
 
 Mensagens de commit seguem o mesmo prefixo da branch: `feat:`, `fix:`, `docs:`, `test:`, `chore:`.
 
-### Passo 6: abra a Pull Request
+#### Passo 6: abra a Pull Request
 
 1. O GitHub mostra um botão **Compare & pull request** — clique nele.
 2. Preencha o template da PR e, no campo de descrição, referencie a Issue: `Closes #12`.
 3. Peça revisão para outra pessoa do time (ou avise no grupo).
 4. O **CI roda automaticamente** os três checks. Se ficar vermelho, clique em *Details*, corrija e envie de novo.
 
-### Passo 7: revisão e merge
+#### Passo 7: acompanhe a revisão (o merge é do admin)
 
-- Responda aos comentários da revisão e envie os ajustes na mesma branch.
-- Quem revisa faz o merge — **não faça merge da sua própria PR**.
-- Depois do merge, atualize sua `main`:
+- Responda aos comentários e envie os ajustes na mesma branch.
+- Quando o CI estiver verde e a revisão estiver aprovada, avise um admin/mantenedor. **Não faça merge da sua própria PR** — o merge é feito por ele(a).
+- Depois que o merge acontecer, atualize sua `main`:
 
 ```bash
 git switch main
@@ -253,9 +264,32 @@ git pull
 
 </details>
 
+### Fluxo do admin / mantenedor(a)
+
+1. **Revise a PR**: confira a Issue vinculada, o escopo, os critérios de aceite, os testes e se não há `.env`, dados ou segredos versionados.
+2. **Confira o CI**: os três checks precisam estar verdes. Se estiver vermelho, devolva para o autor com o que precisa ser corrigido.
+3. **Aprove**: use **Approve** no review. Em dúvida, comente antes de aprovar — não aprove só "para destravar".
+4. **Faça o merge**: use **Squash and merge** para manter uma PR = um commit na `main`. Confira a mensagem (`feat:`, `fix:`...) e exclua a branch remota depois.
+5. **Atualize sua `main`**:
+
+```bash
+git switch main
+git pull
+```
+
+6. **Mantenha as regras**: a proteção da `main` deve exigir PR, CI verde e pelo menos uma revisão independente. Mantenha o `CODEOWNERS` e as permissões do time atualizadas.
+
+> [!WARNING]
+> **Emergência:** se a `main` quebrar (ex.: CI fora do ar ou correção crítica), o admin pode usar o bypass da proteção. Registre o motivo na Issue ou em `docs/decisions/`, abra uma PR de revisão retroativa e **nunca use `git push --force` na `main`**.
+
+> [!NOTE]
+> Admin que abre PR também precisa de revisão independente. Aprovação técnica de PR não é aprovação de uma estratégia para operação simulada — essa decisão segue a governança do fundo.
+
 ### Regras de ouro
 
 - Uma Issue por PR; PR pequena e focada.
+- Dev não faz merge; admin não aprova a própria PR sozinho — sempre há uma revisão independente.
+- Se você tem dúvida sobre seu papel ou permissão, pergunte à liderança antes de usar o bypass.
 - Nunca versione `.env`, dados ou resultados pesados (veja [Convenções](#convenções-do-projeto)).
 - Você precisa conseguir explicar todo código que envia, inclusive o gerado com IA.
 - Pediu ajuda e continua travado? Avise no grupo e marque a Issue com a label `blocked`.
