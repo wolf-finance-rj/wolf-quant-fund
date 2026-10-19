@@ -7,10 +7,10 @@ Closes #
 ## Como testar
 
 ```bash
-uv run ruff check .
-uv run ruff format --check .
-uv run pytest
+docker compose run --rm checks
 ```
+
+> Sem Docker: `uv run ruff check . && uv run ruff format --check . && uv run pytest`.
 
 ## Risco e impacto quantitativo
 

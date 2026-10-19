@@ -1,5 +1,7 @@
 # Ambiente de desenvolvimento do Wolf Quant Fund (Python 3.12 + uv).
-# Uso: docker compose up -d app  |  docker compose run --rm test  |  docker compose run --rm lint
+# Principal: docker compose up -d app  |  docker compose exec app bash
+# Checks:    docker compose run --rm checks
+# Notebooks: docker compose --profile research up notebook
 name: wolf-quant-fund
 
 x-app: &app
@@ -8,22 +10,26 @@ x-app: &app
   image: wolf-quant-fund:dev
   working_dir: /app
   init: true
+  env_file:
+    # Carrega todas as variáveis do .env quando ele existir.
+    - path: .env
+      required: false
   environment:
     WQF_ENV: ${WQF_ENV:-development}
-    WQF_DATA_DIR: ${WQF_DATA_DIR:-/app/data}
+    # Caminho fixo dentro do container; o diretório é montado abaixo.
+    WQF_DATA_DIR: /app/data
   volumes:
     # Repositório montado: edições locais valem no container sem rebuild.
     - .:/app
-    # Cache do uv compartilhado entre execuções (ex.: uv run --with jupyterlab).
+    # Dados e resultados ficam no host, fora da imagem.
+    - ./data:/app/data
+    # Cache do uv compartilhado entre execuções.
     - uv-cache:/root/.cache/uv
 
 services:
-  # Sandbox de desenvolvimento: `docker compose up -d app` e depois `docker compose exec app <cmd>`.
+  # Sandbox principal: `docker compose up -d app` e depois `docker compose exec app <cmd>`.
   app:
     <<: *app
-    ports:
-      # Reservado para o Jupyter opcional; veja o README.
-      - "${WQF_JUPYTER_PORT:-8888}:8888"
 
   # Mesmos checks do CI (.github/workflows/ci.yml).
   test:
@@ -33,6 +39,29 @@ services:
   lint:
     <<: *app
     command: ["sh", "-c", "uv run ruff check . && uv run ruff format --check ."]
+
+  # Um comando para rodar tudo o que o CI roda.
+  checks:
+    <<: *app
+    command: ["sh", "-c", "uv run ruff check . && uv run ruff format --check . && uv run pytest -q"]
+
+  # Jupyter opcional: docker compose --profile research up notebook
+  notebook:
+    <<: *app
+    profiles: ["research"]
+    command:
+      - uv
+      - run
+      - --with
+      - jupyterlab
+      - jupyter
+      - lab
+      - --ip=0.0.0.0
+      - --no-browser
+      - --ServerApp.token=${WQF_JUPYTER_TOKEN:-wqf}
+    ports:
+      # Só acessível da própria máquina.
+      - "127.0.0.1:${WQF_JUPYTER_PORT:-8888}:8888"
 
 volumes:
   uv-cache:
