@@ -3,7 +3,7 @@ Wolf_Quant_Fund_Documento_de_Estruturacao.docx
 
 # Ambiente local e dados (ver .env.example)
 .env
-data/
+/data/
 
 # Python e ferramentas (ambientes, caches e builds locais)
 .venv/
