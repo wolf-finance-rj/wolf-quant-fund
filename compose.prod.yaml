@@ -1,0 +1,8 @@
+# Override para deploy da infraestrutura de execução na VPS.
+# A execução de estratégias e fechamentos continua manual.
+services:
+  app:
+    environment:
+      WQF_ENV: production
+    restart: unless-stopped
+    command: ["sleep", "infinity"]
