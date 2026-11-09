@@ -1,3 +1,35 @@
-"""Wolf Quant Fund: pesquisa e simulação educacional."""
+from .metrics import (
+    DEFAULT_PERIODS_PER_YEAR,
+    BenchmarkComparison,
+    InsufficientDataError,
+    ZeroVolatilityError,
+    annualized_return,
+    annualized_volatility,
+    compare_to_benchmark,
+    cumulative_return,
+    drawdown_series,
+    information_ratio,
+    max_drawdown,
+    max_drawdown_from_returns,
+    returns_to_wealth,
+    sharpe_ratio,
+    wealth_to_returns,
+)
 
-__version__ = "0.1.0"
+__all__ = [
+    "DEFAULT_PERIODS_PER_YEAR",
+    "BenchmarkComparison",
+    "InsufficientDataError",
+    "ZeroVolatilityError",
+    "annualized_return",
+    "annualized_volatility",
+    "compare_to_benchmark",
+    "cumulative_return",
+    "drawdown_series",
+    "information_ratio",
+    "max_drawdown",
+    "max_drawdown_from_returns",
+    "returns_to_wealth",
+    "sharpe_ratio",
+    "wealth_to_returns",
+]
