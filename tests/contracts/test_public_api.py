@@ -20,3 +20,11 @@ def test_validation_error_is_a_value_error() -> None:
     from wqf.contracts import ContractValidationError
 
     assert issubclass(ContractValidationError, ValueError)
+
+
+@pytest.mark.parametrize("name", ["MARKET_TIMEZONE", "MARKET_CLOSE_TIME", "market_close"])
+def test_market_calendar_helpers_are_exported(name: str) -> None:
+    module = importlib.import_module("wqf.contracts")
+
+    assert name in module.__all__
+    assert getattr(module, name) is not None

@@ -2,12 +2,20 @@ from __future__ import annotations
 
 import dataclasses
 import json
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta, timezone
 from typing import Any
 
 import pytest
 
-from wqf.contracts import MARKET_DATA_SCHEMA_VERSION, ContractValidationError, MarketData
+from wqf.contracts import (
+    MARKET_DATA_SCHEMA_VERSION,
+    ContractValidationError,
+    MarketData,
+    market_close,
+)
+
+BRT = timezone(timedelta(hours=-3), "BRT")
+BRST = timezone(timedelta(hours=-2), "BRST")  # horário de verão brasileiro (até 2019)
 
 
 def test_valid_bar_is_accepted_and_normalized(market_data_kwargs: dict[str, Any]) -> None:
@@ -72,12 +80,58 @@ def test_rejects_naive_available_at(market_data_kwargs: dict[str, Any]) -> None:
         MarketData(**{**market_data_kwargs, "available_at": datetime(2026, 10, 1, 18, 30)})
 
 
-def test_rejects_availability_before_trading_date(market_data_kwargs: dict[str, Any]) -> None:
-    with pytest.raises(ContractValidationError) as exc:
-        MarketData(
-            **{**market_data_kwargs, "available_at": datetime(2026, 9, 30, 20, 0, tzinfo=UTC)}
-        )
+@pytest.mark.parametrize(
+    "available_at",
+    [
+        # véspera, à tarde
+        datetime(2026, 9, 30, 20, 0, tzinfo=UTC),
+        # véspera às 22h em Brasília: já é 01/10 em UTC, mas ainda é véspera na B3
+        datetime(2026, 9, 30, 22, 0, tzinfo=BRT),
+        # mesmo dia, durante o pregão: o fechamento ainda não é conhecido
+        datetime(2026, 10, 1, 9, 0, tzinfo=BRT),
+        datetime(2026, 10, 1, 17, 59, tzinfo=BRT),
+    ],
+    ids=["vespera-utc", "vespera-noite-brt", "manha-do-pregao", "um-minuto-antes"],
+)
+def test_rejects_availability_before_market_close(
+    market_data_kwargs: dict[str, Any], available_at: datetime
+) -> None:
+    with pytest.raises(ContractValidationError, match="antes do fechamento") as exc:
+        MarketData(**{**market_data_kwargs, "available_at": available_at})
     assert exc.value.field == "available_at"
+
+
+@pytest.mark.parametrize(
+    "available_at",
+    [
+        datetime(2026, 10, 1, 18, 0, tzinfo=BRT),  # exatamente no fechamento
+        datetime(2026, 10, 1, 21, 0, tzinfo=UTC),  # o mesmo instante, informado em UTC
+        datetime(2026, 10, 2, 8, 0, tzinfo=BRT),  # na manhã seguinte
+    ],
+    ids=["no-fechamento", "fechamento-em-utc", "dia-seguinte"],
+)
+def test_accepts_availability_from_market_close(
+    market_data_kwargs: dict[str, Any], available_at: datetime
+) -> None:
+    bar = MarketData(**{**market_data_kwargs, "available_at": available_at})
+    assert bar.available_at == available_at
+
+
+def test_market_close_follows_historical_daylight_saving() -> None:
+    assert market_close(date(2026, 10, 1)).utcoffset() == timedelta(hours=-3)
+    assert market_close(date(2018, 1, 15)).utcoffset() == timedelta(hours=-2)
+
+
+def test_availability_rule_uses_daylight_saving_on_historical_dates(
+    market_data_kwargs: dict[str, Any],
+) -> None:
+    historical = {**market_data_kwargs, "date": date(2018, 1, 15)}
+
+    # Em 2018 havia horário de verão: 18:30 local (UTC-2) já é depois do fechamento.
+    bar = MarketData(**{**historical, "available_at": datetime(2018, 1, 15, 18, 30, tzinfo=BRST)})
+    assert bar.date == date(2018, 1, 15)
+    with pytest.raises(ContractValidationError, match="antes do fechamento"):
+        MarketData(**{**historical, "available_at": datetime(2018, 1, 15, 17, 30, tzinfo=BRST)})
 
 
 @pytest.mark.parametrize("ticker", ["", "   ", "PETR 4", 4])

@@ -8,14 +8,17 @@ Convenções:
 - ``dividend`` é o provento em BRL por ação na data ex (0.0 quando não houver).
 - ``available_at`` é o instante, com fuso horário, em que o dado passa a ser conhecido.
   Estratégias só podem usar a barra em decisões tomadas a partir desse instante.
+  Ele não pode ser anterior ao fechamento do pregão (``MARKET_CLOSE_TIME`` no fuso
+  ``MARKET_TIMEZONE``, o da B3): antes disso o fechamento do dia ainda não é conhecido.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import date, datetime, time
 from typing import Any, ClassVar
+from zoneinfo import ZoneInfo
 
 from wqf.contracts._validation import (
     check_keys,
@@ -31,6 +34,18 @@ from wqf.contracts._validation import (
 from wqf.contracts.errors import ContractValidationError
 
 MARKET_DATA_SCHEMA_VERSION = "1.0"
+
+# Fuso da B3. Usar a base de fusos (e não um UTC-3 fixo) trata corretamente os dados
+# históricos dos anos em que o Brasil tinha horário de verão (até 2019).
+MARKET_TIMEZONE = ZoneInfo("America/Sao_Paulo")
+# Horário (local) a partir do qual a barra do dia é considerada conhecida. 18:00 é o
+# fechamento mais tardio do pregão regular da B3; por isso a regra é conservadora.
+MARKET_CLOSE_TIME = time(18, 0)
+
+
+def market_close(trading_date: date) -> datetime:
+    """Instante de fechamento do pregão de ``trading_date`` no fuso da B3."""
+    return datetime.combine(trading_date, MARKET_CLOSE_TIME, tzinfo=MARKET_TIMEZONE)
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,9 +97,13 @@ class MarketData:
                 raise ContractValidationError(
                     c, name, f"{name} ({values[name]}) fora do intervalo [low, high]"
                 )
-        if values["available_at"].astimezone(UTC).date() < values["date"]:
+        close_at = market_close(values["date"])
+        if values["available_at"] < close_at:
             raise ContractValidationError(
-                c, "available_at", "dado marcado como disponível antes da data do pregão"
+                c,
+                "available_at",
+                f"dado marcado como disponível ({values['available_at'].isoformat()}) antes "
+                f"do fechamento do pregão ({close_at.isoformat()})",
             )
 
         # Grava os valores normalizados (ticker maiúsculo, números como float).

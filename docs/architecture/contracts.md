@@ -15,7 +15,8 @@
 ## Contratos implementados (v1.0)
 
 `MarketData`, `StrategySignal` e `SimulatedTrade` estão em `src/wqf/contracts/` (Issue #2),
-como `dataclasses` imutáveis da biblioteca padrão (sem dependências novas). Cada registro é
+como `dataclasses` imutáveis da biblioteca padrão. A única dependência nova é `tzdata`
+(base oficial de fusos horários, necessária para `zoneinfo` funcionar no Windows). Cada registro é
 validado na criação e, se inválido, levanta `ContractValidationError` (subclasse de
 `ValueError`) com `contract`, `field` e `reason`. Os campos de texto são normalizados: o
 ticker vira maiúsculo e sem espaços, como em `wqf.data`. Os números são convertidos para `float`.
@@ -43,7 +44,7 @@ from wqf.contracts import MarketData, StrategySignal, SimulatedTrade
 | `date` | `date` | data do pregão |
 | `open`, `high`, `low`, `close` | `float` | BRL por ação, > 0, sem ajuste retroativo; `low <= open, close <= high` |
 | `volume` | `float` | quantidade negociada, >= 0 |
-| `available_at` | `datetime` (com fuso) | instante em que o dado passa a ser conhecido; não pode ser anterior à data do pregão (comparação em UTC) |
+| `available_at` | `datetime` (com fuso) | instante em que o dado passa a ser conhecido; não pode ser anterior ao fechamento do pregão (18:00 em `America/Sao_Paulo`) |
 | `source` | `str` | identificador da fonte (ex.: `synthetic-equities-v1`) |
 | `dividend` | `float` | opcional, BRL por ação na data ex, >= 0 (padrão 0.0) |
 
@@ -67,9 +68,26 @@ from wqf.contracts import MarketData, StrategySignal, SimulatedTrade
 | `execution_price` | `float` | BRL por ação, > 0, antes dos custos |
 | `costs` | `float` | custos totais em BRL, >= 0 |
 
+**Regra de disponibilidade (anti look-ahead).** A barra de um dia só é considerada
+conhecida a partir do fechamento do pregão: `available_at >= market_close(date)`, em que
+`market_close` devolve 18:00 do dia no fuso da B3 (`MARKET_TIMEZONE`, `America/Sao_Paulo`).
+A comparação é feita entre instantes, então tanto faz o fuso em que `available_at` é
+informado. Exemplos:
+
+- `2026-09-30 22:00-03:00` para a barra de `2026-10-01` é recusado: em UTC já é dia 1º, mas
+  na B3 ainda é véspera.
+- `2026-10-01 09:00-03:00` é recusado: durante o pregão o fechamento ainda não existe.
+- `2026-10-01 18:00-03:00` e `2026-10-01 21:00Z` (o mesmo instante) são aceitos.
+- Datas anteriores a 2019 seguem o horário de verão da época (UTC-2) pela base de fusos.
+
+18:00 é o fechamento mais tardio do pregão regular da B3, o que torna a regra
+conservadora nos dias de pregão mais curto. Feriados e pregões reduzidos não são
+verificados aqui; isso cabe a um calendário de pregões.
+
 As escolhas abaixo foram assumidas na v1.0 e ainda dependem de confirmação do responsável
 técnico: o limite de peso ±1 por ativo, a permissão de posições vendidas (`short`), a
-quantidade fracionária em `SimulatedTrade` e a regra de `available_at` comparada em UTC.
+quantidade fracionária em `SimulatedTrade` e o horário de corte de 18:00
+(`MARKET_CLOSE_TIME`) da regra de disponibilidade.
 
 ## Decisões pendentes
 

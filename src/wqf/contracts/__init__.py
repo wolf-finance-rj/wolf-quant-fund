@@ -6,7 +6,13 @@ Especificação e decisões em ``docs/architecture/contracts.md``.
 """
 
 from wqf.contracts.errors import ContractValidationError
-from wqf.contracts.market_data import MARKET_DATA_SCHEMA_VERSION, MarketData
+from wqf.contracts.market_data import (
+    MARKET_CLOSE_TIME,
+    MARKET_DATA_SCHEMA_VERSION,
+    MARKET_TIMEZONE,
+    MarketData,
+    market_close,
+)
 from wqf.contracts.simulated_trade import SIMULATED_TRADE_SCHEMA_VERSION, SimulatedTrade
 from wqf.contracts.strategy_signal import (
     MAX_ABS_TARGET_WEIGHT,
@@ -16,7 +22,9 @@ from wqf.contracts.strategy_signal import (
 )
 
 __all__ = [
+    "MARKET_CLOSE_TIME",
     "MARKET_DATA_SCHEMA_VERSION",
+    "MARKET_TIMEZONE",
     "MAX_ABS_TARGET_WEIGHT",
     "SIMULATED_TRADE_SCHEMA_VERSION",
     "STRATEGY_SIGNAL_SCHEMA_VERSION",
@@ -25,4 +33,5 @@ __all__ = [
     "SignalDirection",
     "SimulatedTrade",
     "StrategySignal",
+    "market_close",
 ]
