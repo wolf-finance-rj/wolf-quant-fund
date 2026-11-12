@@ -6,3 +6,14 @@ simulation_only = true
 [review]
 requires_governance_approval = true
 minimum_incubation_months = 3
+
+# Total 0,15% por operação; 2% ao ano de aluguel short (manual v1.0).
+# A divisão entre corretagem, emolumentos e impacto não foi aprovada.
+# Até aprovação, concentrar o custo em other_rate. A soma das quatro
+# taxas de transação NÃO deve exceder o total aprovado sem revisão.
+[backtest.costs]
+brokerage_rate = "0"
+exchange_rate = "0"
+impact_rate = "0"
+other_rate = "0.0015"
+annual_borrow_rate = "0.02"
