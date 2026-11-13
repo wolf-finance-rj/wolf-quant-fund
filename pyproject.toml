@@ -9,8 +9,8 @@ description = "Plataforma educacional de pesquisa quantitativa e simulação da 
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "polars>=2.1.0",
-    "pyarrow>=26.0.1",
+    "polars>=2.0.0",
+    "pyarrow>=26.0.0",
 ]
 
 [dependency-groups]
