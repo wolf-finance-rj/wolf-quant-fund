@@ -17,14 +17,3 @@ exchange_rate = "0"
 impact_rate = "0"
 other_rate = "0.0015"
 annual_borrow_rate = "0.02"
-
-# Pairs Trading (#14): valores ILUSTRATIVOS para o protótipo de pesquisa.
-# Não aprovados pelo comitê. Ativos e hedge_ratio são definidos por par.
-# Opcionais (omitir = desativado): stop_z = 4.0, max_holding_sessions = 60.
-[strategies.pairs]
-window = 20
-entry_z = 2.0
-exit_z = 0.5
-method = "log_ratio"
-hedge_ratio = 1.0
-leg_notional_brl = "1000000"
