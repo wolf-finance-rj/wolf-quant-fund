@@ -1,5 +1,6 @@
 """Subpacote da estratégia de Pairs Trading."""
 
+from wqf.strategies.pairs.signals import PairsSignalConfig, generate_pairs_signals
 from wqf.strategies.pairs.spread import (
     AlignedPairPoint,
     PairSpreadPoint,
@@ -15,6 +16,7 @@ from wqf.strategies.pairs.spread import (
 __all__ = [
     "AlignedPairPoint",
     "PairSpreadPoint",
+    "PairsSignalConfig",
     "PricePoint",
     "RollingZScorePoint",
     "SpreadMethod",
@@ -22,4 +24,5 @@ __all__ = [
     "analyze_pair_spread",
     "calculate_spread",
     "compute_rolling_zscore",
+    "generate_pairs_signals",
 ]
